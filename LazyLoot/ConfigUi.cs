@@ -14,7 +14,7 @@ public class ConfigUi : Window, IDisposable
 {
     internal WindowSystem windowSystem = new();
 
-    public ConfigUi() : base("Lazy Loot Config")
+    public ConfigUi() : base("Lazy Loot 配置")
     {
         SizeConstraints = new WindowSizeConstraints()
         {
@@ -34,9 +34,9 @@ public class ConfigUi : Window, IDisposable
 
     public override void Draw()
     {
-        if (ImGui.BeginTabBar("config"))
+        if (ImGui.BeginTabBar("配置"))
         {
-            if (ImGui.BeginTabItem("Features"))
+            if (ImGui.BeginTabItem("功能"))
             {
                 ImGui.BeginChild("generalFeatures");
 
@@ -54,7 +54,7 @@ public class ConfigUi : Window, IDisposable
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("User Restriction"))
+            if (ImGui.BeginTabItem("用户限制"))
             {
                 ImGui.BeginChild("generalFeatures");
 
@@ -64,7 +64,7 @@ public class ConfigUi : Window, IDisposable
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("About"))
+            if (ImGui.BeginTabItem("关于"))
             {
                 PunishLib.ImGuiMethods.AboutTab.Draw("LazyLoot");
                 ImGui.EndTabItem();
@@ -104,52 +104,52 @@ public class ConfigUi : Window, IDisposable
 
     private void DrawDiagnostics()
     {
-        ImGuiEx.ImGuiLineCentered("DiagnosticsLabel", () => ImGuiEx.TextUnderlined("Diagnostics & Troubleshooting"));
+        ImGuiEx.ImGuiLineCentered("诊断模式", () => ImGuiEx.TextUnderlined("诊断与故障排除"));
 
-        if (ImGui.Checkbox($"Diagnostics Mode", ref LazyLoot.Config.DiagnosticsMode))
+        if (ImGui.Checkbox($"诊断模式", ref LazyLoot.Config.DiagnosticsMode))
             LazyLoot.Config.Save();
 
-        ImGuiComponents.HelpMarker($"Outputs additional messages to chat whenever an item is passed, with reasons. This is useful for helping to diagnose issues with the developers or for understanding why LazyLoot makes decisions to pass on items.\r\n\r\nThese messages will only be displayed to you, nobody else in-game can see them.");
+        ImGuiComponents.HelpMarker($"每当放弃一个道具时，都会向聊天框输出附加信息，并说明原因。这对于帮助开发人员诊断问题或了解LazyLoot为何决定放弃道具非常有用。\r\n\r\n这些信息只会显示给您，游戏中的其他人无法看到。");
 
-        if (ImGui.Checkbox("Don't pass on items that fail to roll.", ref LazyLoot.Config.NoPassEmergency))
+        if (ImGui.Checkbox("不要放弃未能投掷的道具。", ref LazyLoot.Config.NoPassEmergency))
             LazyLoot.Config.Save();
 
-        ImGuiComponents.HelpMarker($"Normally LazyLoot will pass on items that fail to roll. Enabling this option will prevent it from passing in those situations. Be warned there could be weird side effects doing this and should only be used if you're running into issues with emergency passing appearing.");
+        ImGuiComponents.HelpMarker($"通常情况下，LazyLoot会放弃投掷失败的道具。启用此选项后，就不会在这些情况下放弃。需要提醒的是，这样做可能会有奇怪的副作用，只有在出现紧急状况时才可以使用。");
     }
 
     public override void OnClose()
     {
         LazyLoot.Config.Save();
-        Notify.Success("Configuration saved");
+        Notify.Success("配置已保存");
         base.OnClose();
     }
 
     private static void DrawFeatures()
     {
-        ImGuiEx.ImGuiLineCentered("FeaturesLabel", () => ImGuiEx.TextUnderlined("LazyLoot Rolling Commands"));
+        ImGuiEx.ImGuiLineCentered("功能标签", () => ImGuiEx.TextUnderlined("LazyLoot Roll点指令"));
         ImGui.Columns(2, null, false);
         ImGui.SetColumnWidth(0, 80);
         ImGui.Text("/lazy need");
         ImGui.NextColumn();
-        ImGui.Text("Roll need for everything. If impossible, roll greed (or pass if greed is impossible).");
+        ImGui.Text("需求所有道具。无法需求的则贪婪，无法贪婪的则放弃。");
         ImGui.NextColumn();
         ImGui.Text("/lazy greed");
         ImGui.NextColumn();
-        ImGui.Text("Roll greed for everything. If impossible, roll pass.");
+        ImGui.Text("贪婪所有道具。无法贪婪的则放弃。");
         ImGui.NextColumn();
         ImGui.Text("/lazy pass");
         ImGui.NextColumn();
-        ImGui.Text("Pass on things you haven't rolled for yet.");
+        ImGui.Text("放弃那些还没投掷的道具。");
         ImGui.NextColumn();
         ImGui.Columns(1);
     }
 
     private static void DrawRollingDelay()
     {
-        ImGuiEx.ImGuiLineCentered("RollingDelayLabel", () => ImGuiEx.TextUnderlined("Rolling Command Delay"));
+        ImGuiEx.ImGuiLineCentered("投掷延迟标签", () => ImGuiEx.TextUnderlined("道具之间投掷间隔"));
         ImGui.SetNextItemWidth(100);
 
-        if (ImGui.DragFloatRange2("Rolling delay between items", ref LazyLoot.Config.MinRollDelayInSeconds, ref LazyLoot.Config.MaxRollDelayInSeconds, 0.1f))
+        if (ImGui.DragFloatRange2("道具之间投掷间隔", ref LazyLoot.Config.MinRollDelayInSeconds, ref LazyLoot.Config.MaxRollDelayInSeconds, 0.1f))
         {
             LazyLoot.Config.MinRollDelayInSeconds = Math.Max(LazyLoot.Config.MinRollDelayInSeconds, 0.5f);
 
@@ -159,119 +159,119 @@ public class ConfigUi : Window, IDisposable
 
     private static void DrawUserRestriction()
     {
-        ImGui.Text("Settings in this page will apply to every single item, even if they are tradeable or not.");
+        ImGui.Text("此页面中的设置将应用于每一个道具，即使它们是可交易的还是不可交易的。");
         ImGui.Separator();
-        ImGui.Checkbox("Pass on items with an item level below", ref LazyLoot.Config.RestrictionIgnoreItemLevelBelow);
+        ImGui.Checkbox("忽略品级在此数值以下的道具", ref LazyLoot.Config.RestrictionIgnoreItemLevelBelow);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(50);
         ImGui.DragInt("###RestrictionIgnoreItemLevelBelowValue", ref LazyLoot.Config.RestrictionIgnoreItemLevelBelowValue);
         if (LazyLoot.Config.RestrictionIgnoreItemLevelBelowValue < 0) LazyLoot.Config.RestrictionIgnoreItemLevelBelowValue = 0;
 
-        ImGui.Checkbox("Pass on all items already unlocked. (Triple Triad Cards, Orchestrions, Faded Copies, Minions, Mounts, Emotes, Hairstyles)", ref LazyLoot.Config.RestrictionIgnoreItemUnlocked);
+        ImGui.Checkbox("放弃已解锁的道具(幻卡、乐谱、陈旧的乐谱、宠物、坐骑、情感动作、发型)", ref LazyLoot.Config.RestrictionIgnoreItemUnlocked);
 
         if (!LazyLoot.Config.RestrictionIgnoreItemUnlocked)
         {
-            ImGui.Checkbox("Pass on unlocked Mounts.", ref LazyLoot.Config.RestrictionIgnoreMounts);
-            ImGui.Checkbox("Pass on unlocked Minions.", ref LazyLoot.Config.RestrictionIgnoreMinions);
-            ImGui.Checkbox("Pass on unlocked Bardings.", ref LazyLoot.Config.RestrictionIgnoreBardings);
-            ImGui.Checkbox("Pass on unlocked Triple Triad cards.", ref LazyLoot.Config.RestrictionIgnoreTripleTriadCards);
-            ImGui.Checkbox("Pass on unlocked Emotes and Hairstyle.", ref LazyLoot.Config.RestrictionIgnoreEmoteHairstyle);
-            ImGui.Checkbox("Pass on unlocked Orchestrion Rolls.", ref LazyLoot.Config.RestrictionIgnoreOrchestrionRolls);
-            ImGui.Checkbox("Pass on unlocked Faded Copies.", ref LazyLoot.Config.RestrictionIgnoreFadedCopy);
+            ImGui.Checkbox("放弃已解锁的坐骑。", ref LazyLoot.Config.RestrictionIgnoreMounts);
+            ImGui.Checkbox("放弃已解锁的宠物。", ref LazyLoot.Config.RestrictionIgnoreMinions);
+            ImGui.Checkbox("放弃已解锁的鸟甲。", ref LazyLoot.Config.RestrictionIgnoreBardings);
+            ImGui.Checkbox("放弃已解锁的幻卡。", ref LazyLoot.Config.RestrictionIgnoreTripleTriadCards);
+            ImGui.Checkbox("放弃已解锁的情感动作和发型。", ref LazyLoot.Config.RestrictionIgnoreEmoteHairstyle);
+            ImGui.Checkbox("放弃已解锁的乐谱。", ref LazyLoot.Config.RestrictionIgnoreOrchestrionRolls);
+            ImGui.Checkbox("放弃已解锁的乐谱的陈旧的乐谱。", ref LazyLoot.Config.RestrictionIgnoreFadedCopy);
         }
 
-        ImGui.Checkbox("Pass on items I can't use with current job.", ref LazyLoot.Config.RestrictionOtherJobItems);
+        ImGui.Checkbox("放弃当前职业无法使用的道具。", ref LazyLoot.Config.RestrictionOtherJobItems);
 
-        ImGui.Checkbox("Don't roll on items with a weekly lockout.", ref LazyLoot.Config.RestrictionWeeklyLockoutItems);
+        ImGui.Checkbox("不在具有周限的道具上投掷。", ref LazyLoot.Config.RestrictionWeeklyLockoutItems);
 
         ImGui.Checkbox("###RestrictionWeeklyLockoutItems", ref LazyLoot.Config.RestrictionLootLowerThanJobIlvl);
         ImGui.SameLine();
-        ImGui.Text("Roll");
+        ImGui.Text("投掷");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80);
-        ImGui.Combo("###RestrictionLootLowerThanJobIlvlRollState", ref LazyLoot.Config.RestrictionLootLowerThanJobIlvlRollState, new string[] { "Greed", "Pass" }, 2);
+        ImGui.Combo("###RestrictionLootLowerThanJobIlvlRollState", ref LazyLoot.Config.RestrictionLootLowerThanJobIlvlRollState, new string[] { "贪婪", "放弃" }, 2);
         ImGui.SameLine();
-        ImGui.Text("on items that are");
+        ImGui.Text($"于那些低于你当前职业装备品级 (★ {Utils.GetPlayerIlevel()})");
         ImGui.SetNextItemWidth(50);
         ImGui.SameLine();
         ImGui.DragInt("###RestrictionLootLowerThanJobIlvlTreshold", ref LazyLoot.Config.RestrictionLootLowerThanJobIlvlTreshold);
         if (LazyLoot.Config.RestrictionLootLowerThanJobIlvlTreshold < 0) LazyLoot.Config.RestrictionLootLowerThanJobIlvlTreshold = 0;
         ImGui.SameLine();
-        ImGui.Text($"item levels lower than your current job item level (\u2605 {Utils.GetPlayerIlevel()}).");
-        ImGuiComponents.HelpMarker("This setting will only apply to gear you can need on.");
+        ImGui.Text($"品级的道具 (\u2605 {Utils.GetPlayerIlevel()})。");
+        ImGuiComponents.HelpMarker("此设置只适用于你需要的装备。");
 
         ImGui.Checkbox("###RestrictionLootIsJobUpgrade", ref LazyLoot.Config.RestrictionLootIsJobUpgrade);
         ImGui.SameLine();
-        ImGui.Text("Roll");
+        ImGui.Text("投掷");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80);
-        ImGui.Combo("###RestrictionLootIsJobUpgradeRollState", ref LazyLoot.Config.RestrictionLootIsJobUpgradeRollState, new string[] { "Greed", "Pass" }, 2);
+        ImGui.Combo("###RestrictionLootIsJobUpgradeRollState", ref LazyLoot.Config.RestrictionLootIsJobUpgradeRollState, new string[] { "贪婪", "放弃" }, 2);
         ImGui.SameLine();
-        ImGui.Text($"on items if the current equipped item of the same type has a higher item level.");
-        ImGuiComponents.HelpMarker("This setting will only apply to gear you can need on.");
+        ImGui.Text($"于那些低于当前同类型装备的道具上");
+        ImGuiComponents.HelpMarker("此设置只适用你需要的装备。");
 
         ImGui.Checkbox($"###RestrictionSeals", ref LazyLoot.Config.RestrictionSeals);
         ImGui.SameLine();
-        ImGui.Text("Pass on items with a expert delivery seal value of less than");
+        ImGui.Text("放弃筹备稀有品价值低于");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(100);
         ImGui.DragInt("###RestrictionSealsAmnt", ref LazyLoot.Config.RestrictionSealsAmnt);
         ImGui.SameLine();
-        ImGui.Text($"(item level {Roller.ConvertSealsToIlvl(LazyLoot.Config.RestrictionSealsAmnt)} and below)");
-        ImGuiComponents.HelpMarker("This setting will only apply to gear able to be turned in for expert delivery.");
+        ImGui.Text($"的道具 (道具品级 {Roller.ConvertSealsToIlvl(LazyLoot.Config.RestrictionSealsAmnt)} 及以下)");
+        ImGuiComponents.HelpMarker("此设置仅适用于可上交筹备稀有品的装备。");
 
     }
 
     private void DrawChatAndToast()
     {
-        ImGuiEx.ImGuiLineCentered("ChatInfoLabel", () => ImGuiEx.TextUnderlined("Roll Result Information"));
-        ImGui.Checkbox("Display roll information in chat.", ref LazyLoot.Config.EnableChatLogMessage);
+        ImGuiEx.ImGuiLineCentered("聊天信息标签", () => ImGuiEx.TextUnderlined("投掷结果通知"));
+        ImGui.Checkbox("在聊天栏中显示投掷信息。", ref LazyLoot.Config.EnableChatLogMessage);
         ImGui.Spacing();
-        ImGuiEx.ImGuiLineCentered("ToastLabel", () => ImGuiEx.TextUnderlined("Display as Toasts"));
-        ImGuiComponents.HelpMarker("Show your roll information as a pop-up toast, using the various styles below.");
-        ImGui.Checkbox("Quest", ref LazyLoot.Config.EnableQuestToast);
+        ImGuiEx.ImGuiLineCentered("悬浮通知标签", () => ImGuiEx.TextUnderlined("显示悬浮通知"));
+        ImGuiComponents.HelpMarker("使用以下各种样式，作为悬浮通知来显示你的投掷。");
+        ImGui.Checkbox("任务", ref LazyLoot.Config.EnableQuestToast);
         ImGui.SameLine();
-        ImGui.Checkbox("Normal", ref LazyLoot.Config.EnableNormalToast);
+        ImGui.Checkbox("通常", ref LazyLoot.Config.EnableNormalToast);
         ImGui.SameLine();
-        ImGui.Checkbox("Error", ref LazyLoot.Config.EnableErrorToast);
+        ImGui.Checkbox("错误", ref LazyLoot.Config.EnableErrorToast);
     }
 
     private void DrawFulf()
     {
-        ImGuiEx.ImGuiLineCentered("FULFLabel", () => ImGuiEx.TextUnderlined("Fancy Ultimate Lazy Feature"));
+        ImGuiEx.ImGuiLineCentered("FULFLabel", () => ImGuiEx.TextUnderlined("梦幻终极懒人功能"));
 
-        ImGui.TextWrapped($"Fancy Ultimate Lazy Feature (FULF) is a set and forget feature that will automatically roll on items for you instead of having to use the commands above.");
+        ImGui.TextWrapped($"梦幻终极懒人功能(FULF)是一个设置即忘功能，它将自动为您Roll点，而不必使用上面的命令。");
         ImGui.Separator();
         ImGui.Columns(2, null, false);
         ImGui.SetColumnWidth(0, 80);
         ImGui.Text("/fulf need");
         ImGui.NextColumn();
-        ImGui.Text("Set FULF to Needing mode, where it will follow the /lazy need rules.");
+        ImGui.Text("设置 FULF 为需求模式，它会遵循/lzay need规则。");
         ImGui.NextColumn();
         ImGui.Text("/fulf greed");
         ImGui.NextColumn();
-        ImGui.Text("Set FULF to Greeding mode, where it will follow the /lazy greed rules.");
+        ImGui.Text("设置 FULF 为贪婪模式，它会遵循/lazy greed规则。");
         ImGui.NextColumn();
         ImGui.Text("/fulf pass");
         ImGui.NextColumn();
-        ImGui.Text("Set FULF to Passing mode, where it will follow the /lazy pass rules.");
+        ImGui.Text("设置 FULF 为放弃模式，它会遵循/lazy pass规则。");
         ImGui.NextColumn();
         ImGui.Columns(1);
         ImGui.Separator();
         ImGui.Checkbox("###FulfEnabled", ref LazyLoot.Config.FulfEnabled);
         ImGui.SameLine();
-        ImGui.TextColored(LazyLoot.Config.FulfEnabled ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed, LazyLoot.Config.FulfEnabled ? "FULF Enabled" : "FULF Disabled");
+        ImGui.TextColored(LazyLoot.Config.FulfEnabled ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed, LazyLoot.Config.FulfEnabled ? "FULF 启用" : "FULF 禁用");
 
         ImGui.SetNextItemWidth(100);
 
-        if (ImGui.Combo("Roll options", ref LazyLoot.Config.FulfRoll, new string[] { "Need", "Greed", "Pass" }, 3))
+        if (ImGui.Combo("投掷选项", ref LazyLoot.Config.FulfRoll, new string[] { "需求", "贪婪", "放弃" }, 3))
         {
             LazyLoot.Config.Save();
         }
 
-        ImGui.Text("First Roll Delay Range (In seconds)");
+        ImGui.Text("第一次投掷的延迟范围 (秒)");
         ImGui.SetNextItemWidth(100);
-        ImGui.DragFloat("Minimum Delay in seconds. ", ref LazyLoot.Config.FulfMinRollDelayInSeconds, 0.1F);
+        ImGui.DragFloat("最小秒数。 ", ref LazyLoot.Config.FulfMinRollDelayInSeconds, 0.1F);
 
         if (LazyLoot.Config.FulfMinRollDelayInSeconds >= LazyLoot.Config.FulfMaxRollDelayInSeconds)
         {
@@ -284,7 +284,7 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.SetNextItemWidth(100);
-        ImGui.DragFloat("Maximum Delay in seconds. ", ref LazyLoot.Config.FulfMaxRollDelayInSeconds, 0.1F);
+        ImGui.DragFloat("最大秒数。 ", ref LazyLoot.Config.FulfMaxRollDelayInSeconds, 0.1F);
 
         if (LazyLoot.Config.FulfMaxRollDelayInSeconds <= LazyLoot.Config.FulfMinRollDelayInSeconds)
         {

@@ -1,18 +1,14 @@
 {
-  "Author": "53m1k0l0n/Gidedin (Puni.sh)",
+  "Author": "53m1k0l0n/Gidedin (Puni.sh) / NiGuangOwO (本地化)",
   "Name": "LazyLoot",
-  "Punchline": "Dungeon Loot but Lazy.",
-  "Description": "Roll command with various arguments need | needonly | greed | pass | passall. \nChat and Toast output and delay for rolling.",
+  "Punchline": "一(自)键(动)Roll点用的 (在线安装Only)",
+  "Description": "带有各种参数的Roll点命令 need | greed | pass\n聊天和Toast输出以及Roll点延迟。",
   "Tags": [
     "plugin",
     "loot",
     "utility",
     "other"
   ],
-  "CategoryTags": null,
   "RepoUrl": "https://github.com/PunishXIV/LazyLoot",
-  "ImageUrls": null,
-  "IconUrl": "https://love.puni.sh/resources/lazyloot.png",
-  "DalamudAPILevel": 10,
-  "ChangeLog": "- More fixes to weekly loot skipping"
+  "IconUrl": "https://s3.puni.sh/media/plugin/9/icon-zjun2qgmfbe.png"
 }

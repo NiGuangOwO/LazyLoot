@@ -4,6 +4,7 @@ using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -37,9 +38,20 @@ public class LazyLoot : IDalamudPlugin, IDisposable
     public LazyLoot(IDalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this);
-        PunishLibMain.Init(pluginInterface, "LazyLoot", new AboutPlugin() { Developer = "53m1k0l0n/Gidedin" });
+        PunishLibMain.Init(pluginInterface, "LazyLoot", new AboutPlugin() { Developer = "53m1k0l0n/Gidedin", Translator = "NiGuangOwO", Afdian = "https://afdian.com/a/NiGuangOwO" });
         P = this;
-
+#if !DEBUG
+        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        {
+            Svc.NotificationManager.AddNotification(new Notification()
+            {
+                Type = NotificationType.Error,
+                Title = "加载验证",
+                Content = "由于本地加载或安装来源仓库非NiGuangOwO个人仓库，插件加载失败",
+            });
+            return;
+        }
+#endif
         Config = Svc.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         ConfigUi = new ConfigUi();
         DtrEntry ??= Svc.DtrBar.Get("LazyLoot");
@@ -51,19 +63,19 @@ public class LazyLoot : IDalamudPlugin, IDisposable
 
         Svc.Commands.AddHandler("/lazyloot", new CommandInfo(LazyCommand)
         {
-            HelpMessage = "Open Lazy Loot config.",
+            HelpMessage = "打开 Lazy Loot 配置。",
             ShowInHelp = true,
         });
 
         Svc.Commands.AddHandler("/lazy", new CommandInfo(LazyCommand)
         {
-            HelpMessage = "Open Lazy Loot config by default. Add need | greed | pass to roll on current items.",
+            HelpMessage = "默认情况下打开LazyLoot配置。添加参数 need | greed | pass 来对当前道具投掷。",
             ShowInHelp = true,
         });
 
         Svc.Commands.AddHandler("/fulf", new CommandInfo(FulfCommand)
         {
-            HelpMessage = "Enable/Disable FULF with /fulf or change the loot rule with /fulf need | greed | pass.",
+            HelpMessage = "通过/fulf 启用/禁用 FULF 或通过/fulf need | greed | pass 改变投掷规则。",
             ShowInHelp = true,
         });
 
@@ -119,7 +131,14 @@ public class LazyLoot : IDalamudPlugin, IDisposable
     {
         if (!disposing)
             return;
-
+#if !DEBUG
+        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        {
+            ECommonsMain.Dispose();
+            PunishLibMain.Dispose();
+            return;
+        }
+#endif
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
         Svc.Chat.CheckMessageHandled -= NoticeLoot;
 
@@ -186,9 +205,9 @@ public class LazyLoot : IDalamudPlugin, IDisposable
         {
             string fulfMode = Config.FulfRoll switch
             {
-                0 => "Needing",
-                1 => "Greeding",
-                2 => "Passing"
+                0 => "需求",
+                1 => "贪婪",
+                2 => "放弃"
             };
 
             DtrEntry.Text = new SeString(
@@ -200,7 +219,7 @@ public class LazyLoot : IDalamudPlugin, IDisposable
         {
             DtrEntry.Text = new SeString(
             new IconPayload(BitmapFontIcon.Dice),
-            new TextPayload("FULF Disabled"));
+            new TextPayload("FULF 禁用"));
         }
 
         DtrEntry.Shown = true;
@@ -245,19 +264,19 @@ public class LazyLoot : IDalamudPlugin, IDisposable
     {
         SeString seString = new(new List<Payload>()
         {
-            new TextPayload("Need "),
+            new TextPayload("需求 "),
             new UIForegroundPayload(575),
             new TextPayload(need.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (need == 1 ? "" : "s") + ", greed "),
+            new TextPayload(" 件 " +"， 贪婪 "),
             new UIForegroundPayload(575),
             new TextPayload(greed.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (greed == 1 ? "" : "s") + ", pass "),
+            new TextPayload(" 件 " + "， 放弃 "),
             new UIForegroundPayload(575),
             new TextPayload(pass.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (pass == 1 ? "" : "s") + ".")
+            new TextPayload(" 件 "+ "。")
         });
 
         if (Config.EnableChatLogMessage)
