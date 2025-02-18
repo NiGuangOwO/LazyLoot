@@ -10,5 +10,8 @@
     "other"
   ],
   "RepoUrl": "https://github.com/PunishXIV/LazyLoot",
-  "IconUrl": "https://s3.puni.sh/media/plugin/9/icon-zjun2qgmfbe.png"
+  "ImageUrls": null,
+  "IconUrl": "https://s3.puni.sh/media/plugin/9/icon-zjun2qgmfbe.png",
+  "DalamudAPILevel": 11,
+  "ChangeLog": "- Switch priority on ilvl related rolling rules."
 }
