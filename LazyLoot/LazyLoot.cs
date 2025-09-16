@@ -4,8 +4,6 @@ using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using ECommons;
@@ -35,23 +33,20 @@ public class LazyLoot : IDalamudPlugin, IDisposable
     internal static IDtrBarEntry DtrEntry;
 
     internal static LazyLoot P;
+    private bool isDev;
     public LazyLoot(IDalamudPluginInterface pluginInterface)
     {
-        ECommonsMain.Init(pluginInterface, this);
-        PunishLibMain.Init(pluginInterface, "LazyLoot", new AboutPlugin() { Developer = "53m1k0l0n/Gidedin", Translator = "NiGuangOwO", Afdian = "https://afdian.com/a/NiGuangOwO" });
-        P = this;
 #if !DEBUG
-        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        if (pluginInterface.IsDev || !pluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
         {
-            Svc.NotificationManager.AddNotification(new Notification()
-            {
-                Type = NotificationType.Error,
-                Title = "加载验证",
-                Content = "由于本地加载或安装来源仓库非NiGuangOwO个人仓库，插件加载失败",
-            });
+            isDev = true;
             return;
         }
 #endif
+        ECommonsMain.Init(pluginInterface, this);
+        PunishLibMain.Init(pluginInterface, "LazyLoot", new AboutPlugin() { Developer = "53m1k0l0n/Gidedin", Translator = "NiGuangOwO", Afdian = "https://afdian.com/a/NiGuangOwO" });
+        P = this;
+
         Config = Svc.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         ConfigUi = new ConfigUi();
         DtrEntry ??= Svc.DtrBar.Get("LazyLoot");
@@ -131,12 +126,8 @@ public class LazyLoot : IDalamudPlugin, IDisposable
         if (!disposing)
             return;
 #if !DEBUG
-        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
-        {
-            ECommonsMain.Dispose();
-            PunishLibMain.Dispose();
+        if (isDev)
             return;
-        }
 #endif
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
         Svc.Chat.CheckMessageHandled -= NoticeLoot;
@@ -214,7 +205,7 @@ public class LazyLoot : IDalamudPlugin, IDisposable
             {
                 0 => "需求",
                 1 => "贪婪",
-                2 => "放弃"
+                2 => "放弃",
                 _ => throw new ArgumentOutOfRangeException(nameof(Config.FulfRoll)),
             };
 
@@ -242,11 +233,14 @@ public class LazyLoot : IDalamudPlugin, IDisposable
     static int _need = 0, _greed = 0, _pass = 0;
     private static void RollLoot()
     {
-        if (_rollOption == RollResult.UnAwarded) return;
-        if (DateTime.Now < _nextRollTime) return;
+        if (_rollOption == RollResult.UnAwarded)
+            return;
+        if (DateTime.Now < _nextRollTime)
+            return;
 
         //No rolling in cutscene.
-        if (Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent]) return;
+        if (Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent])
+            return;
 
         _nextRollTime = DateTime.Now.AddMilliseconds(Math.Max(1500, new Random()
             .Next((int)(Config.MinRollDelayInSeconds * 1000),
@@ -307,7 +301,8 @@ public class LazyLoot : IDalamudPlugin, IDisposable
 
     private void NoticeLoot(XivChatType type, int senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (!Config.FulfEnabled || type != (XivChatType)2105) return;
+        if (!Config.FulfEnabled || type != (XivChatType)2105)
+            return;
 
         string textValue = message.TextValue;
         if (textValue == Svc.Data.GetExcelSheet<LogMessage>()!.First(x => x.RowId == 5194).Text)

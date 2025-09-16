@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using Dalamud;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Textures;
@@ -13,9 +7,13 @@ using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using PunishLib.ImGuiMethods;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace LazyLoot;
 
@@ -50,7 +48,7 @@ public class ConfigUi : Window, IDisposable
         [FieldOffset(0x38)] public LootMode LootMode;
     }
 
-    public ConfigUi() : base("Lazy Loot 配置)
+    public ConfigUi() : base("Lazy Loot 配置")
     {
         SizeConstraints = new WindowSizeConstraints
         {
@@ -97,13 +95,13 @@ public class ConfigUi : Window, IDisposable
                 ImGui.EndTabItem();
             }
 
-            #if DEBUG
+#if DEBUG
             if (ImGui.BeginTabItem("Debug"))
             {
                 DrawDebug();
                 ImGui.EndTabItem();
             }
-            #endif
+#endif
 
             ImGui.EndTabBar();
         }
@@ -132,7 +130,8 @@ public class ConfigUi : Window, IDisposable
             {
                 foreach (var item in loot->Items)
                 {
-                    if (item.ItemId == 0) continue;
+                    if (item.ItemId == 0)
+                        continue;
                     var casted = (DebugLootItem*)&item;
                     ImGui.PushID($"{casted->ItemId}");
                     Dalamud.Utility.Util.ShowStruct(casted);
@@ -166,7 +165,7 @@ public class ConfigUi : Window, IDisposable
         ImGuiComponents.HelpMarker(
             "每当放弃一个道具时，都会向聊天框输出附加信息，并说明原因。这对于帮助开发人员诊断问题或了解LazyLoot为何决定放弃道具非常有用。\r\n\r\n这些信息只会显示给您，游戏中的其他人无法看到。");
 
-        if (ImGui.Checkbox("不要放弃未能投掷的道具。", ref LazyLoot.Config.NoPassEmergency))
+        if (ImGui.Checkbox("不要放弃未能投掷的道具", ref LazyLoot.Config.NoPassEmergency))
             LazyLoot.Config.Save();
 
         ImGuiComponents.HelpMarker(
@@ -268,7 +267,7 @@ public class ConfigUi : Window, IDisposable
         if (LazyLoot.Config.RestrictionLootLowerThanJobIlvlTreshold < 0)
             LazyLoot.Config.RestrictionLootLowerThanJobIlvlTreshold = 0;
         ImGui.SameLine();
-        ImGui.Text($"品级的道具 (\u2605 {Utils.GetPlayerIlevel()})。");
+        ImGui.Text($"品级的道具 (\u2605 {Utils.GetPlayerIlevel()})");
         ImGuiComponents.HelpMarker("此设置只适用于你需要的装备。");
 
         ImGui.Checkbox("###RestrictionLootIsJobUpgrade", ref LazyLoot.Config.RestrictionLootIsJobUpgrade);
@@ -360,7 +359,7 @@ public class ConfigUi : Window, IDisposable
                 ImGui.Text(restrictedItem.Name.ToString());
                 if (ImGui.IsItemHovered())
                     ImGui.SetTooltip(restrictedItem.Name.ToString());
-                
+
                 ImGui.TableNextColumn();
                 CenterText();
                 if (ImGui.RadioButton($"##need{item.Id}", item.RollRule == RollResult.Needed))
@@ -512,7 +511,8 @@ public class ConfigUi : Window, IDisposable
                             ImGui.SameLine();
                         }
 
-                        if (!ImGui.Selectable($" {item.Name} (ID: {item.RowId})")) continue;
+                        if (!ImGui.Selectable($" {item.Name} (ID: {item.RowId})"))
+                            continue;
                         LazyLoot.Config.Restrictions.Items.Add(new CustomRestriction
                         {
                             Id = itemSheet.GetRow(item.RowId).RowId,
@@ -734,7 +734,8 @@ public class ConfigUi : Window, IDisposable
                         if (ImGui.IsItemHovered())
                             ImGui.SetTooltip("Test");
                         ImGui.SameLine();
-                        if (!ImGui.Selectable($" {duty.Name} (ID: {duty.RowId})")) continue;
+                        if (!ImGui.Selectable($" {duty.Name} (ID: {duty.RowId})"))
+                            continue;
                         LazyLoot.Config.Restrictions.Duties.Add(new CustomRestriction
                         {
                             Id = dutySheet.GetRow(duty.RowId).RowId,
@@ -827,15 +828,16 @@ public class ConfigUi : Window, IDisposable
 
         ImGui.Text("第一次投掷的延迟范围 (秒)");
         ImGui.SetNextItemWidth(100);
-        ImGui.DragFloat("最小秒数。 ", ref LazyLoot.Config.FulfMinRollDelayInSeconds, 0.1F);
+        ImGui.DragFloat("最小秒数 ", ref LazyLoot.Config.FulfMinRollDelayInSeconds, 0.1F);
 
         if (LazyLoot.Config.FulfMinRollDelayInSeconds >= LazyLoot.Config.FulfMaxRollDelayInSeconds)
             LazyLoot.Config.FulfMinRollDelayInSeconds = LazyLoot.Config.FulfMaxRollDelayInSeconds - 0.1f;
 
-        if (LazyLoot.Config.FulfMinRollDelayInSeconds < 1.5f) LazyLoot.Config.FulfMinRollDelayInSeconds = 1.5f;
+        if (LazyLoot.Config.FulfMinRollDelayInSeconds < 1.5f)
+            LazyLoot.Config.FulfMinRollDelayInSeconds = 1.5f;
 
         ImGui.SetNextItemWidth(100);
-        ImGui.DragFloat("最大秒数。 ", ref LazyLoot.Config.FulfMaxRollDelayInSeconds, 0.1F);
+        ImGui.DragFloat("最大秒数 ", ref LazyLoot.Config.FulfMaxRollDelayInSeconds, 0.1F);
 
         if (LazyLoot.Config.FulfMaxRollDelayInSeconds <= LazyLoot.Config.FulfMinRollDelayInSeconds)
             LazyLoot.Config.FulfMaxRollDelayInSeconds = LazyLoot.Config.FulfMinRollDelayInSeconds + 0.1f;
