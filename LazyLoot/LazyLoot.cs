@@ -55,9 +55,10 @@ public class LazyLoot : IDalamudPlugin, IDisposable
         Config = Svc.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         ConfigUi = new ConfigUi();
         DtrEntry ??= Svc.DtrBar.Get("LazyLoot");
-        DtrEntry.OnClick = new(() => CycleFulf());
+        DtrEntry.OnClick = new((i) => CycleFulf());
 
 
+        Svc.PluginInterface.UiBuilder.OpenMainUi += OnOpenConfigUi;
         Svc.PluginInterface.UiBuilder.OpenConfigUi += OnOpenConfigUi;
         Svc.Chat.CheckMessageHandled += NoticeLoot;
 
@@ -75,7 +76,7 @@ public class LazyLoot : IDalamudPlugin, IDisposable
 
         Svc.Commands.AddHandler("/fulf", new CommandInfo(FulfCommand)
         {
-            HelpMessage = "通过/fulf 启用/禁用 FULF 或通过/fulf need | greed | pass 改变投掷规则。",
+            HelpMessage = "使用 /fulf [on|off] 启用/禁用 FULF 或使用 /fulf need | greed | pass 更改投掷规则。",
             ShowInHelp = true,
         });
 
@@ -88,16 +89,14 @@ public class LazyLoot : IDalamudPlugin, IDisposable
         if (args.Length == 0)
         {
             OnOpenConfigUi();
-            return;
         }
         else
         {
-            RollingCommand(null, arguments);
-            return;
+            RollingCommand(null!, arguments);
         }
     }
 
-    private void CycleFulf()
+    private static void CycleFulf()
     {
         if (!Config.FulfEnabled)
         {
@@ -162,6 +161,14 @@ public class LazyLoot : IDalamudPlugin, IDisposable
         {
             Config.FulfRoll = res.Value;
         }
+        else if (arguments.Contains("off", StringComparison.OrdinalIgnoreCase))
+        {
+            Config.FulfEnabled = false;
+        }
+        else if (arguments.Contains("on", StringComparison.OrdinalIgnoreCase))
+        {
+            Config.FulfEnabled = true;
+        }
         else
         {
             Config.FulfEnabled = !Config.FulfEnabled;
@@ -203,11 +210,12 @@ public class LazyLoot : IDalamudPlugin, IDisposable
     {
         if (Config.FulfEnabled)
         {
-            string fulfMode = Config.FulfRoll switch
+            var fulfMode = Config.FulfRoll switch
             {
                 0 => "需求",
                 1 => "贪婪",
                 2 => "放弃"
+                _ => throw new ArgumentOutOfRangeException(nameof(Config.FulfRoll)),
             };
 
             DtrEntry.Text = new SeString(
@@ -246,7 +254,7 @@ public class LazyLoot : IDalamudPlugin, IDisposable
 
         try
         {
-            if (!Roller.RollOneItem(_rollOption, ref _need, ref _greed, ref _pass))//Finish the loot
+            if (!Roller.RollOneItem(_rollOption, ref _need, ref _greed, ref _pass)) //Finish the loot
             {
                 ShowResult(_need, _greed, _pass);
                 _need = _greed = _pass = 0;
