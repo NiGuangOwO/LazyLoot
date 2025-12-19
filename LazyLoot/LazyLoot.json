@@ -13,5 +13,5 @@
   "ImageUrls": null,
   "IconUrl": "https://s3.puni.sh/media/plugin/9/icon-zjun2qgmfbe.png",
   "DalamudAPILevel": 13,
-  "ChangeLog": "- Patch update."
+  "ChangeLog": "- Optimize restriction imports."
 }
