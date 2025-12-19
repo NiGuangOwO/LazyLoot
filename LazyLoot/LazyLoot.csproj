@@ -9,8 +9,8 @@
   </PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="ECommons" Version="3.1.0.5" />
 		<PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
-		<ProjectReference Include="..\..\ECommons\ECommons\ECommons.csproj" />
 		<ProjectReference Include="..\..\PunishLib\PunishLib\PunishLib.csproj" />
 	</ItemGroup>
 

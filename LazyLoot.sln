@@ -1,12 +1,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32210.238
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11312.210 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LazyLoot", "LazyLoot\LazyLoot.csproj", "{ADCEBB53-B064-46F8-993F-F05A4BE49902}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PunishLib", "..\PunishLib\PunishLib\PunishLib.csproj", "{CF1B84A9-C285-A7A1-7ECE-0C3DFACC7EFD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommons", "..\ECommons\ECommons\ECommons.csproj", "{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,22 +50,6 @@ Global
 		{CF1B84A9-C285-A7A1-7ECE-0C3DFACC7EFD}.ReleaseForms|Any CPU.Build.0 = Release|x64
 		{CF1B84A9-C285-A7A1-7ECE-0C3DFACC7EFD}.ReleaseForms|x64.ActiveCfg = Release|x64
 		{CF1B84A9-C285-A7A1-7ECE-0C3DFACC7EFD}.ReleaseForms|x64.Build.0 = Release|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Debug|Any CPU.Build.0 = Debug|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Debug|x64.ActiveCfg = Debug|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Debug|x64.Build.0 = Debug|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.DebugForms|Any CPU.ActiveCfg = DebugForms|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.DebugForms|Any CPU.Build.0 = DebugForms|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.DebugForms|x64.ActiveCfg = DebugForms|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.DebugForms|x64.Build.0 = DebugForms|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Release|Any CPU.ActiveCfg = Release|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Release|Any CPU.Build.0 = Release|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Release|x64.ActiveCfg = Release|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.Release|x64.Build.0 = Release|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.ReleaseForms|Any CPU.ActiveCfg = ReleaseForms|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.ReleaseForms|Any CPU.Build.0 = ReleaseForms|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.ReleaseForms|x64.ActiveCfg = ReleaseForms|x64
-		{7B54D5B5-7AB4-CCB1-F4B8-2A52B209D934}.ReleaseForms|x64.Build.0 = ReleaseForms|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
