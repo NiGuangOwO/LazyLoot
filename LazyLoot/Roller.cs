@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using ECommons;
 
 namespace LazyLoot;
 
@@ -28,7 +27,8 @@ internal static class Roller
 
     public static bool RollOneItem(RollResult option, ref int need, ref int greed, ref int pass)
     {
-        if (!GetNextLootItem(out var index, out var loot)) return false;
+        if (!GetNextLootItem(out var index, out var loot))
+            return false;
 
         // Make sure we ignore the fulf state if the user has custom item rules
         // Otherwise, we make sure the option is a valid roll
@@ -116,7 +116,8 @@ internal static class Roller
     private static unsafe RollResult? GetPlayerCustomRestrict(LootItem loot)
     {
         var lootItem = Svc.Data.GetExcelSheet<Item>().GetRowOrDefault(loot.ItemId);
-        if (lootItem == null || (lootItem.Value.IsUnique && ItemCount(loot.ItemId) > 0)) return RollResult.Passed;
+        if (lootItem == null || (lootItem.Value.IsUnique && ItemCount(loot.ItemId) > 0))
+            return RollResult.Passed;
 
         // Here, we will check for the specific rules for items.
         var itemCustomRestriction =
@@ -212,7 +213,7 @@ internal static class Roller
                 return RollResult.Passed;
             }
 
-            if (LazyLoot.Config.RestrictionIgnoreMounts && lootItem.Value.ItemAction.Value.Type == 1322)
+            if (LazyLoot.Config.RestrictionIgnoreMounts && lootItem.Value.ItemAction.Value.Action.Value.RowId == 1322)
             {
                 if (LazyLoot.Config.DiagnosticsMode)
                     DuoLog.Debug(
@@ -221,7 +222,7 @@ internal static class Roller
                 return RollResult.Passed;
             }
 
-            if (LazyLoot.Config.RestrictionIgnoreMinions && lootItem.Value.ItemAction.Value.Type == 853)
+            if (LazyLoot.Config.RestrictionIgnoreMinions && lootItem.Value.ItemAction.Value.Action.Value.RowId == 853)
             {
                 if (LazyLoot.Config.DiagnosticsMode)
                     DuoLog.Debug(
@@ -231,7 +232,7 @@ internal static class Roller
             }
 
             if (LazyLoot.Config.RestrictionIgnoreBardings
-                && lootItem.Value.ItemAction.Value.Type == 1013)
+                && lootItem.Value.ItemAction.Value.Action.Value.RowId == 1013)
             {
                 if (LazyLoot.Config.DiagnosticsMode)
                     DuoLog.Debug(
@@ -241,7 +242,7 @@ internal static class Roller
             }
 
             if (LazyLoot.Config.RestrictionIgnoreEmoteHairstyle
-                && lootItem.Value.ItemAction.Value.Type == 2633)
+                && lootItem.Value.ItemAction.Value.Action.Value.RowId == 2633)
             {
                 if (LazyLoot.Config.DiagnosticsMode)
                     DuoLog.Debug(
@@ -251,7 +252,7 @@ internal static class Roller
             }
 
             if (LazyLoot.Config.RestrictionIgnoreTripleTriadCards
-                && lootItem.Value.ItemAction.Value.Type == 3357)
+                && lootItem.Value.ItemAction.Value.Action.Value.RowId == 3357)
             {
                 if (LazyLoot.Config.DiagnosticsMode)
                     DuoLog.Debug(
@@ -261,7 +262,7 @@ internal static class Roller
             }
 
             if (LazyLoot.Config.RestrictionIgnoreOrchestrionRolls
-                && lootItem.Value.ItemAction.Value.Type == 25183)
+                && lootItem.Value.ItemAction.Value.Action.Value.RowId == 25183)
             {
                 if (LazyLoot.Config.DiagnosticsMode)
                     DuoLog.Debug(
@@ -328,8 +329,10 @@ internal static class Roller
                 {
                     InventoryItem* equippedItem = equippedItems->GetInventorySlot(i);
                     var equippedItemData = Svc.Data.GetExcelSheet<Item>().GetRowOrDefault(equippedItem->ItemId);
-                    if (equippedItemData == null) continue;
-                    if (equippedItemData.Value.EquipSlotCategory.RowId != lootItemSlot) continue;
+                    if (equippedItemData == null)
+                        continue;
+                    if (equippedItemData.Value.EquipSlotCategory.RowId != lootItemSlot)
+                        continue;
                     // We gather all the iLvls of the equipped items in the same slot (if any)
                     itemsToVerify.Add(equippedItemData.Value.LevelItem.RowId);
                 }
@@ -360,7 +363,7 @@ internal static class Roller
 
         //PLD set.
         if (LazyLoot.Config.RestrictionOtherJobItems
-            && lootItem.Value.ItemAction.Value.Type == 29153
+            && lootItem.Value.ItemAction.Value.Action.Value.RowId == 29153
             && !(Player.Object?.ClassJob.RowId is 1 or 19))
         {
             if (LazyLoot.Config.DiagnosticsMode)
@@ -412,12 +415,18 @@ internal static class Roller
         {
             loot = span[(int)i];
 
-            if (loot.ItemId >= 1000000) loot.ItemId -= 1000000;
-            if (loot.ChestObjectId is 0 or 0xE0000000) continue;
-            if (loot.RollResult != RollResult.UnAwarded) continue;
-            if (loot.RollState is RollState.Rolled or RollState.Unavailable or RollState.Unknown) continue;
-            if (loot.ItemId == 0) continue;
-            if (loot.LootMode is LootMode.LootMasterGreedOnly or LootMode.Unavailable) continue;
+            if (loot.ItemId >= 1000000)
+                loot.ItemId -= 1000000;
+            if (loot.ChestObjectId is 0 or 0xE0000000)
+                continue;
+            if (loot.RollResult != RollResult.UnAwarded)
+                continue;
+            if (loot.RollState is RollState.Rolled or RollState.Unavailable or RollState.Unknown)
+                continue;
+            if (loot.ItemId == 0)
+                continue;
+            if (loot.LootMode is LootMode.LootMasterGreedOnly or LootMode.Unavailable)
+                continue;
 
             var checkWeekly = LazyLoot.Config.RestrictionWeeklyLockoutItems;
 
@@ -468,7 +477,8 @@ internal static class Roller
             // loot.RollValue == 20 means it cant be rolled because one was already obtained this week.
             // we ignore that so it will be passed automatically, as there is nothing the user can do other than
             // pass it
-            if (loot.WeeklyLootItem && (byte)loot.RollState != 20 && checkWeekly) continue;
+            if (loot.WeeklyLootItem && (byte)loot.RollState != 20 && checkWeekly)
+                continue;
 
             return true;
         }

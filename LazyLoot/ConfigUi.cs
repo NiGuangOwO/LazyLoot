@@ -320,18 +320,18 @@ public class ConfigUi : Window, IDisposable
     private static void DrawUserRestrictionItems()
     {
         ImGuiEx.LineCentered("ItemRestrictionWarning",
-            () => ImGui.TextColored(ImGuiColors.DalamudYellow, "These rules override any other restriction settings"));
+            () => ImGui.TextColored(ImGuiColors.DalamudYellow, "这些规则会覆盖任何其他限制设置。"));
         ImGui.Separator();
 
         if (ImGui.BeginTable("UserRestrictionItemsTable", 8, ImGuiTableFlags.Borders))
         {
-            ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 32f);
-            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn("Need", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Greed", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Pass", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Nothing", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("图标", ImGuiTableColumnFlags.WidthFixed, 32f);
+            ImGui.TableSetupColumn("名字", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("需求", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("贪婪", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("放弃", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("不操作", ImGuiTableColumnFlags.WidthFixed, 50f);
             ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 60f);
             ImGui.TableHeadersRow();
 
@@ -396,7 +396,7 @@ public class ConfigUi : Window, IDisposable
                 }
 
                 ImGui.TableNextColumn();
-                if (ImGui.Button($"Remove##{item.Id}"))
+                if (ImGui.Button($"删除##{item.Id}"))
                 {
                     LazyLoot.Config.Restrictions.Items.RemoveAt(i);
                     LazyLoot.Config.Save();
@@ -408,22 +408,22 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(2, 0));
-        if (ImGui.Button("Export", new Vector2(60, 0)))
+        if (ImGui.Button("导出", new Vector2(60, 0)))
         {
             var json = System.Text.Json.JsonSerializer.Serialize(LazyLoot.Config.Restrictions.Items);
             ImGui.SetClipboardText(json);
-            Notify.Success("Item Restrictions settings copied to clipboard!");
+            Notify.Success("物品限制设置已复制到剪贴板！");
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Import", new Vector2(60, 0)))
+        if (ImGui.Button("导入", new Vector2(60, 0)))
         {
             try
             {
                 bool userImported = ImportFromClipboard("import_item_confirmation");
                 if (!userImported)
                 {
-                    Notify.Error("Failed to import item restriction settings - invalid format");
+                    Notify.Error("导入物品限制设置失败 - 格式无效");
                 }
             }
             catch (Exception e)
@@ -433,7 +433,7 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Add Item", new Vector2(-1, 0)))
+        if (ImGui.Button("添加道具", new Vector2(-1, 0)))
         {
             searchResultsQuery = "";
             ImGui.OpenPopup("item_search_add");
@@ -450,16 +450,16 @@ public class ConfigUi : Window, IDisposable
             {
                 ImGui.CloseCurrentPopup();
             }
-            ImGui.Text("Are you sure you want to replace your current item restrictions configuration?");
-            ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined("This action cannot be undone."));
+            ImGui.Text("您确定要替换当前的道具限制设置吗？");
+            ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined("此操作无法撤销。"));
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(40 / 255f, 167 / 255f, 69 / 255f, 1.0f));
-            if (ImGui.Button("YES", new Vector2(100f, 0)))
+            if (ImGui.Button("是", new Vector2(100f, 0)))
             {
                 if (importedRestrictions != null)
                 {
                     LazyLoot.Config.Restrictions.Items = importedRestrictions;
                     LazyLoot.Config.Save();
-                    Notify.Success("Imported Item Restrictions successfully!");
+                    Notify.Success("已成功导入道具限制设置！");
                 }
 
                 ImGui.CloseCurrentPopup();
@@ -468,7 +468,7 @@ public class ConfigUi : Window, IDisposable
             ImGui.PopStyleColor();
             ImGui.SameLine();
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(220 / 255f, 53 / 255f, 69 / 255f, 1.0f));
-            if (ImGui.Button("NO", new Vector2(-1, 0)))
+            if (ImGui.Button("否", new Vector2(-1, 0)))
             {
                 ImGui.CloseCurrentPopup();
             }
@@ -479,7 +479,7 @@ public class ConfigUi : Window, IDisposable
 
         if (ImGui.BeginPopup("item_search_add"))
         {
-            ImGui.Text("Search for item:");
+            ImGui.Text("搜索道具：");
             var currentTime = ImGui.GetTime();
             if (ImGui.GetTime() > lastSearchTime + 0.1f)
             {
@@ -539,7 +539,8 @@ public class ConfigUi : Window, IDisposable
         bool bail = false;
         foreach (var item in importedRestrictions)
         {
-            if (sheet.Any(x => x.RowId == item.Id)) continue;
+            if (sheet.Any(x => x.RowId == item.Id))
+                continue;
             bail = true;
             Notify.Error($"Imported restriction contains invalid item ID: {item.Id}. Import cancelled.");
         }
@@ -586,20 +587,20 @@ public class ConfigUi : Window, IDisposable
                 var width = ImGui.GetWindowWidth() - 30;
                 ImGui.PushTextWrapPos(width);
                 ImGui.TextColored(ImGuiColors.DalamudYellow,
-                    "These rules override the main restriction settings, but is overriden by the item restriction settings if they happen to collide.");
+                    "这些规则会覆盖主要限制设置，但如果与物品限制设置发生冲突，则会被物品限制设置覆盖。");
                 ImGui.PopTextWrapPos();
             });
         ImGui.Separator();
 
         if (ImGui.BeginTable("UserRestrictionDutiesTable", 8, ImGuiTableFlags.Borders))
         {
-            ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthFixed, 32f);
-            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn("Need", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Greed", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Pass", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("Nothing", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("类型", ImGuiTableColumnFlags.WidthFixed, 32f);
+            ImGui.TableSetupColumn("名字", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("需求", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("贪婪", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("放弃", ImGuiTableColumnFlags.WidthFixed, 50f);
+            ImGui.TableSetupColumn("不操作", ImGuiTableColumnFlags.WidthFixed, 50f);
             ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 60f);
             ImGui.TableHeadersRow();
 
@@ -665,7 +666,7 @@ public class ConfigUi : Window, IDisposable
                 }
 
                 ImGui.TableNextColumn();
-                if (ImGui.Button($"Remove##{duty.Id}"))
+                if (ImGui.Button($"删除##{duty.Id}"))
                 {
                     LazyLoot.Config.Restrictions.Duties.RemoveAt(i);
                     LazyLoot.Config.Save();
@@ -677,22 +678,22 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(2, 0));
-        if (ImGui.Button("Export", new Vector2(60, 0)))
+        if (ImGui.Button("导出", new Vector2(60, 0)))
         {
             var json = System.Text.Json.JsonSerializer.Serialize(LazyLoot.Config.Restrictions.Duties);
             ImGui.SetClipboardText(json);
-            Notify.Success("Duty Restrictions copied to clipboard!");
+            Notify.Success("副本限制已复制到剪贴板！");
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Import", new Vector2(60, 0)))
+        if (ImGui.Button("导入", new Vector2(60, 0)))
         {
             try
             {
                 bool userImported = ImportFromClipboard("import_duty_confirmation");
                 if (!userImported)
                 {
-                    Notify.Error("Failed to import duty restriction settings - invalid format");
+                    Notify.Error("导入副本限制设置失败 - 格式无效");
                 }
             }
             catch (Exception e)
@@ -702,7 +703,7 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Add Duty", new Vector2(-1, 0)))
+        if (ImGui.Button("添加副本", new Vector2(-1, 0)))
         {
             searchResultsQuery = "";
             ImGui.OpenPopup("duty_search_add");
@@ -719,16 +720,16 @@ public class ConfigUi : Window, IDisposable
             {
                 ImGui.CloseCurrentPopup();
             }
-            ImGui.Text("Are you sure you want to replace your current duty restrictions configuration?");
-            ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined("This action cannot be undone."));
+            ImGui.Text("您确定要更改当前的副本限制配置吗？");
+            ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined("此操作无法撤销。"));
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(40 / 255f, 167 / 255f, 69 / 255f, 1.0f));
-            if (ImGui.Button("YES", new Vector2(100f, 0)))
+            if (ImGui.Button("是", new Vector2(100f, 0)))
             {
                 if (importedRestrictions != null)
                 {
                     LazyLoot.Config.Restrictions.Duties = importedRestrictions;
                     LazyLoot.Config.Save();
-                    Notify.Success("Imported Duty Restrictions successfully!");
+                    Notify.Success("副本限制设置导入成功！");
                 }
 
                 ImGui.CloseCurrentPopup();
@@ -737,7 +738,7 @@ public class ConfigUi : Window, IDisposable
             ImGui.PopStyleColor();
             ImGui.SameLine();
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(220 / 255f, 53 / 255f, 69 / 255f, 1.0f));
-            if (ImGui.Button("NO", new Vector2(-1, 0)))
+            if (ImGui.Button("否", new Vector2(-1, 0)))
             {
                 ImGui.CloseCurrentPopup();
             }
@@ -749,7 +750,7 @@ public class ConfigUi : Window, IDisposable
 
         if (ImGui.BeginPopup("duty_search_add"))
         {
-            ImGui.Text("Search for duty:");
+            ImGui.Text("搜索副本：");
             var currentTime = ImGui.GetTime();
             if (ImGui.GetTime() > lastSearchTime + 0.1f)
             {
@@ -807,19 +808,19 @@ public class ConfigUi : Window, IDisposable
     {
         if (ImGui.BeginTabBar("PerItemDutyConfigTabs"))
         {
-            if (ImGui.BeginTabItem("Everywhere..."))
+            if (ImGui.BeginTabItem("任何地方..."))
             {
                 DrawUserRestrictionEverywhere();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("... but for these Items"))
+            if (ImGui.BeginTabItem("... 但对于这些物品"))
             {
                 DrawUserRestrictionItems();
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("... but for these Duties"))
+            if (ImGui.BeginTabItem("... 但对于这些副本"))
             {
                 DrawUserRestrictionDuties();
                 ImGui.EndTabItem();
