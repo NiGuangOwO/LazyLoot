@@ -17,22 +17,18 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using ECommons.Reflection;
 
 namespace LazyLoot;
 
 public class ConfigUi : Window, IDisposable
 {
-    private static List<CustomRestriction> importedRestrictions;
-    private static int debugValue;
-    private static string searchResultsQuery;
-    private static double lastSearchTime;
-    private static Item[] itemSearchResults;
-    private static ContentFinderCondition[] dutySearchResults;
-
-    internal WindowSystem windowSystem = new();
+    private static List<CustomRestriction> _importedRestrictions;
+    private static int _debugValue;
+    private readonly WindowSystem _windowSystem = new();
 
     [StructLayout(LayoutKind.Explicit, Size = 0x40)]
-    public struct DebugLootItem
+    private struct DebugLootItem
     {
         [FieldOffset(0x00)] public uint ChestObjectId;
         [FieldOffset(0x04)] public uint ChestItemIndex; // This loot item's index in the chest it came from
@@ -58,13 +54,13 @@ public class ConfigUi : Window, IDisposable
             MinimumSize = new Vector2(400, 200),
             MaximumSize = new Vector2(99999, 99999)
         };
-        windowSystem.AddWindow(this);
-        Svc.PluginInterface.UiBuilder.Draw += windowSystem.Draw;
+        _windowSystem.AddWindow(this);
+        Svc.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
     }
 
     public void Dispose()
     {
-        Svc.PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
+        Svc.PluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
         GC.SuppressFinalize(this);
     }
 
@@ -79,6 +75,8 @@ public class ConfigUi : Window, IDisposable
                 DrawRollingDelay();
                 ImGui.Separator();
                 DrawChatAndToast();
+                ImGui.Separator();
+                DrawDtrToggle();
                 ImGui.Separator();
                 DrawFulf();
                 ImGui.Separator();
@@ -122,8 +120,8 @@ public class ConfigUi : Window, IDisposable
     {
         if (ImGui.CollapsingHeader("Is Item Unlocked?"))
         {
-            ImGui.InputInt("Debug Value Tester", ref debugValue);
-            ImGui.Text($"Is Unlocked: {Roller.IsItemUnlocked((uint)debugValue)}");
+            ImGui.InputInt("Debug Value Tester", ref _debugValue);
+            ImGui.Text($"Is Unlocked: {Roller.IsItemUnlocked((uint)_debugValue)}");
         }
 
         if (ImGui.CollapsingHeader("Loot"))
@@ -141,6 +139,9 @@ public class ConfigUi : Window, IDisposable
                 }
             }
         }
+
+        // This is here in case we ever need to debug faded copies again.
+        // Please do not delete <3
 
         //if (ImGui.Button("Faded Copy Converter Check?"))
         //{
@@ -178,13 +179,12 @@ public class ConfigUi : Window, IDisposable
     public override void OnClose()
     {
         LazyLoot.Config.Save();
-        Notify.Success("配置已保存");
         base.OnClose();
     }
 
     private static void DrawFeatures()
     {
-        ImGuiEx.ImGuiLineCentered("功能标签", () => ImGuiEx.TextUnderlined("LazyLoot Roll点指令"));
+        ImGuiEx.LineCentered("功能标签", () => ImGuiEx.TextUnderlined("LazyLoot Roll点指令"));
         ImGui.Columns(2, ImU8String.Empty, false);
         ImGui.SetColumnWidth(0, 80);
         ImGui.Text("/lazy need");
@@ -217,9 +217,21 @@ public class ConfigUi : Window, IDisposable
         }
     }
 
+    private static void DrawOnlyUntradeableCheckbox(string id, ref bool parentRestriction, ref bool thisRestriction)
+    {
+        if (!parentRestriction) return;
+        ImGui.PushID(id);
+        ImGui.Indent(20f);
+        ImGui.Checkbox(
+            "Only Untradeables",
+            ref thisRestriction);
+        ImGui.Unindent(20f);
+        ImGui.PopID();
+    }
+
     private static void DrawUserRestrictionEverywhere()
     {
-        ImGui.Text("此页面中的设置将应用于每一个道具，即使它们是可交易的还是不可交易的。");
+        ImGui.TextWrapped("此页面中的设置将应用于所有道具，无论它们是否可交易。");
         ImGui.Separator();
         ImGui.Checkbox("忽略品级在此数值以下的道具",
             ref LazyLoot.Config.RestrictionIgnoreItemLevelBelow);
@@ -230,28 +242,75 @@ public class ConfigUi : Window, IDisposable
         if (LazyLoot.Config.RestrictionIgnoreItemLevelBelowValue < 0)
             LazyLoot.Config.RestrictionIgnoreItemLevelBelowValue = 0;
 
-        ImGui.Checkbox(
-            "放弃已解锁的道具(幻卡、乐谱、陈旧的乐谱、宠物、坐骑、情感动作、发型)",
+        Utils.CheckboxTextWrapped(
+            "放弃已解锁的道具 (幻卡、乐谱、陈旧的乐谱、宠物、坐骑、情感动作、发型)",
             ref LazyLoot.Config.RestrictionIgnoreItemUnlocked);
 
         if (!LazyLoot.Config.RestrictionIgnoreItemUnlocked)
         {
             ImGui.Checkbox("放弃已解锁的坐骑", ref LazyLoot.Config.RestrictionIgnoreMounts);
+            DrawOnlyUntradeableCheckbox(
+                "RestrictionMountsOnlyUntradeables",
+                ref LazyLoot.Config.RestrictionIgnoreMounts,
+                ref LazyLoot.Config.RestrictionMountsOnlyUntradeables
+            );
+
             ImGui.Checkbox("放弃已解锁的宠物", ref LazyLoot.Config.RestrictionIgnoreMinions);
+            DrawOnlyUntradeableCheckbox(
+                "RestrictionMinionsOnlyUntradeables",
+                ref LazyLoot.Config.RestrictionIgnoreMinions,
+                ref LazyLoot.Config.RestrictionMinionsOnlyUntradeables
+            );
+
             ImGui.Checkbox("放弃已解锁的鸟甲", ref LazyLoot.Config.RestrictionIgnoreBardings);
+            DrawOnlyUntradeableCheckbox(
+                "RestrictionBardingsOnlyUntradeables",
+                ref LazyLoot.Config.RestrictionIgnoreBardings,
+                ref LazyLoot.Config.RestrictionBardingsOnlyUntradeables
+            );
+
             ImGui.Checkbox("放弃已解锁的幻卡",
                 ref LazyLoot.Config.RestrictionIgnoreTripleTriadCards);
+            DrawOnlyUntradeableCheckbox(
+                "RestrictionTripleTriadCardsOnlyUntradeables",
+                ref LazyLoot.Config.RestrictionIgnoreTripleTriadCards,
+                ref LazyLoot.Config.RestrictionTripleTriadCardsOnlyUntradeables
+            );
+
             ImGui.Checkbox("放弃已解锁的情感动作和发型",
                 ref LazyLoot.Config.RestrictionIgnoreEmoteHairstyle);
+            DrawOnlyUntradeableCheckbox(
+                "RestrictionEmoteHairstyleOnlyUntradeables",
+                ref LazyLoot.Config.RestrictionIgnoreEmoteHairstyle,
+                ref LazyLoot.Config.RestrictionEmoteHairstyleOnlyUntradeables
+            );
+
             ImGui.Checkbox("放弃已解锁的乐谱",
                 ref LazyLoot.Config.RestrictionIgnoreOrchestrionRolls);
-            ImGui.Checkbox("放弃已解锁的乐谱的陈旧的乐谱", ref LazyLoot.Config.RestrictionIgnoreFadedCopy);
+            DrawOnlyUntradeableCheckbox(
+                "RestrictionOrchestrionRollsOnlyUntradeables",
+                ref LazyLoot.Config.RestrictionIgnoreOrchestrionRolls,
+                ref LazyLoot.Config.RestrictionOrchestrionRollsOnlyUntradeables
+            );
+
+            ImGui.Checkbox("放弃已解锁的陈旧的乐谱", ref LazyLoot.Config.RestrictionIgnoreFadedCopy);
+            DrawOnlyUntradeableCheckbox(
+                "RestrictionFadedCopyOnlyUntradeables",
+                ref LazyLoot.Config.RestrictionIgnoreFadedCopy,
+                ref LazyLoot.Config.RestrictionFadedCopyOnlyUntradeables
+            );
         }
+
+        DrawOnlyUntradeableCheckbox(
+            "RestrictionAllUnlockablesOnlyUntradeables",
+            ref LazyLoot.Config.RestrictionIgnoreItemUnlocked,
+            ref LazyLoot.Config.RestrictionAllUnlockablesOnlyUntradeables
+        );
 
         ImGui.Checkbox("放弃当前职业无法使用的道具",
             ref LazyLoot.Config.RestrictionOtherJobItems);
 
-        ImGui.Checkbox("不在具有周限的道具上投掷",
+        ImGui.Checkbox("不要对有周常限制的道具或任务进行投掷。",
             ref LazyLoot.Config.RestrictionWeeklyLockoutItems);
 
         ImGui.Checkbox("###RestrictionWeeklyLockoutItems", ref LazyLoot.Config.RestrictionLootLowerThanJobIlvl);
@@ -295,6 +354,10 @@ public class ConfigUi : Window, IDisposable
         ImGui.Text($"的道具 (道具品级 {Roller.ConvertSealsToIlvl(LazyLoot.Config.RestrictionSealsAmnt)} 及以下)");
         ImGuiComponents.HelpMarker(
             "此设置仅适用于可上交筹备稀有品的装备。");
+
+        ImGui.Checkbox("###NeverPassGlam", ref LazyLoot.Config.NeverPassGlam);
+        ImGui.SameLine();
+        ImGui.TextWrapped("永不放弃外观道具（物品品级为1的道具）");
     }
 
     private static void CenterText()
@@ -319,92 +382,120 @@ public class ConfigUi : Window, IDisposable
 
     private static void DrawUserRestrictionItems()
     {
+        ImGui.Dummy(new Vector2(0, 6));
         ImGuiEx.LineCentered("ItemRestrictionWarning",
-            () => ImGui.TextColored(ImGuiColors.DalamudYellow, "这些规则会覆盖任何其他限制设置。"));
-        ImGui.Separator();
-
-        if (ImGui.BeginTable("UserRestrictionItemsTable", 8, ImGuiTableFlags.Borders))
-        {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("图标", ImGuiTableColumnFlags.WidthFixed, 32f);
-            ImGui.TableSetupColumn("名字", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn("需求", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("贪婪", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("放弃", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("不操作", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 60f);
-            ImGui.TableHeadersRow();
-
-            for (var i = 0; i < LazyLoot.Config.Restrictions.Items.Count; i++)
+            () =>
             {
-                var item = LazyLoot.Config.Restrictions.Items[i];
-                var restrictedItem = Svc.Data.GetExcelSheet<Item>().GetRow(item.Id);
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                var enabled = item.Enabled;
-                CenterText();
-                if (ImGui.Checkbox($"##{item.Id}", ref enabled))
-                {
-                    item.Enabled = enabled;
-                    LazyLoot.Config.Save();
-                }
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudYellow);
+                ImGui.TextWrapped("这些规则会覆盖除每周锁定之外的任何其他限制设置。");
+                ImGui.PopStyleColor();
+            });
+        ImGui.Dummy(new Vector2(0, 6));
+        ImGui.Separator();
+        ImGui.Dummy(new Vector2(0, 6));
+        
+        var items = LazyLoot.Config.Restrictions.Items;
 
-                ImGui.TableNextColumn();
-                CenterText();
-
-                var icon = GetItemIcon(restrictedItem.Icon);
-                if (icon != null)
-                    ImGui.Image(icon.Handle, new Vector2(24, 24));
-                else
-                    ImGui.Text("-");
-
-                ImGui.TableNextColumn();
-                ImGui.Text(restrictedItem.Name.ToString());
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(restrictedItem.Name.ToString());
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##need{item.Id}", item.RollRule == RollResult.Needed))
-                {
-                    item.RollRule = RollResult.Needed;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##greed{item.Id}", item.RollRule == RollResult.Greeded))
-                {
-                    item.RollRule = RollResult.Greeded;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##pass{item.Id}", item.RollRule == RollResult.Passed))
-                {
-                    item.RollRule = RollResult.Passed;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##doNothing{item.Id}", item.RollRule == RollResult.UnAwarded))
-                {
-                    item.RollRule = RollResult.UnAwarded;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                if (ImGui.Button($"删除##{item.Id}"))
-                {
-                    LazyLoot.Config.Restrictions.Items.RemoveAt(i);
-                    LazyLoot.Config.Save();
-                    break;
-                }
+        if (items.Count == 0)
+        {
+            ImGui.Dummy(new Vector2(0, 6));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(14, 12));
+            if (ImGui.BeginChild("##UserRestrictionEmptyState", new Vector2(-1, 60), true,
+                    ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            {
+                ImGuiEx.TextCentered("未添加任何道具。");
+                ImGuiEx.TextCentered("点击下方的添加道具按钮开始添加道具。");
+                ImGui.EndChild();
             }
 
-            ImGui.EndTable();
+            ImGui.PopStyleVar();
+            ImGui.Dummy(new Vector2(0, 6));
+        }
+        else
+        {
+            if (ImGui.BeginTable("UserRestrictionItemsTable", 8, ImGuiTableFlags.Borders))
+            {
+                ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("图标", ImGuiTableColumnFlags.WidthFixed, 32f);
+                ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("需要", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("贪婪", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("放弃", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("无操作", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 60f);
+                ImGui.TableHeadersRow();
+
+                for (var i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+                    var restrictedItem = Svc.Data.GetExcelSheet<Item>().GetRow(item.Id);
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    var enabled = item.Enabled;
+                    CenterText();
+                    if (ImGui.Checkbox($"##{item.Id}", ref enabled))
+                    {
+                        item.Enabled = enabled;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+
+                    var icon = GetItemIcon(restrictedItem.Icon);
+                    if (icon != null)
+                        ImGui.Image(icon.Handle, new Vector2(24, 24));
+                    else
+                        ImGui.Text("-");
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(restrictedItem.Name.ToString());
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip(restrictedItem.Name.ToString());
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##need{item.Id}", item.RollRule == RollResult.Needed))
+                    {
+                        item.RollRule = RollResult.Needed;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##greed{item.Id}", item.RollRule == RollResult.Greeded))
+                    {
+                        item.RollRule = RollResult.Greeded;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##pass{item.Id}", item.RollRule == RollResult.Passed))
+                    {
+                        item.RollRule = RollResult.Passed;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##doNothing{item.Id}", item.RollRule == RollResult.UnAwarded))
+                    {
+                        item.RollRule = RollResult.UnAwarded;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    if (ImGui.Button($"Remove##{item.Id}"))
+                    {
+                        LazyLoot.Config.Restrictions.Items.RemoveAt(i);
+                        LazyLoot.Config.Save();
+                        break;
+                    }
+                }
+
+                ImGui.EndTable();
+            }
         }
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(2, 0));
@@ -433,15 +524,55 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("添加道具", new Vector2(-1, 0)))
-        {
-            searchResultsQuery = "";
-            ImGui.OpenPopup("item_search_add");
-        }
+        
+        var itemSheet = Svc.Data.GetExcelSheet<Item>();
+        Utils.PopupListButton(
+            buttonLabel: "添加道具...",
+            popupId: "item_search_add",
+            popupTitle: "Search for item:",
+            getResults: q =>
+            {
+                if (uint.TryParse(q, out var searchId))
+                {
+                    return itemSheet
+                        .Where(x => x.RowId == searchId
+                                    && x is { RowId: > 0, Name.IsEmpty: false }
+                                    && LazyLoot.Config.Restrictions.Items.All(d => d.Id != x.RowId));
+                }
+
+                return itemSheet
+                    .Where(x =>
+                        x.Name.ToString().Contains(q, StringComparison.OrdinalIgnoreCase)
+                        && x is { RowId: > 0, Name.IsEmpty: false }
+                        && LazyLoot.Config.Restrictions.Items.All(d => d.Id != x.RowId));
+            },
+            getItemLabel: item => $" {item.Name} (ID: {item.RowId})",
+            renderItem: item =>
+            {
+                var icon = GetItemIcon(item.Icon);
+                if (icon != null)
+                {
+                    ImGui.Image(icon.Handle, new Vector2(16, 16));
+                    ImGui.SameLine();
+                }
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(item.Name.ToString());
+                ImGui.SameLine();
+            },
+            onSelect: duty =>
+            {
+                LazyLoot.Config.Restrictions.Items.Add(new CustomRestriction
+                {
+                    Id = duty.RowId,
+                    Enabled = true,
+                    RollRule = RollResult.UnAwarded
+                });
+                LazyLoot.Config.Save();
+            }
+        );
 
         ImGui.PopStyleVar();
-
-        var itemSheet = Svc.Data.GetExcelSheet<Item>();
+        
 
         if (ImGui.BeginPopup("import_item_confirmation", ImGuiWindowFlags.AlwaysAutoResize))
         {
@@ -450,14 +581,15 @@ public class ConfigUi : Window, IDisposable
             {
                 ImGui.CloseCurrentPopup();
             }
+
             ImGui.Text("您确定要替换当前的道具限制设置吗？");
             ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined("此操作无法撤销。"));
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(40 / 255f, 167 / 255f, 69 / 255f, 1.0f));
             if (ImGui.Button("是", new Vector2(100f, 0)))
             {
-                if (importedRestrictions != null)
+                if (_importedRestrictions != null)
                 {
-                    LazyLoot.Config.Restrictions.Items = importedRestrictions;
+                    LazyLoot.Config.Restrictions.Items = _importedRestrictions;
                     LazyLoot.Config.Save();
                     Notify.Success("已成功导入道具限制设置！");
                 }
@@ -476,74 +608,19 @@ public class ConfigUi : Window, IDisposable
             ImGui.PopStyleColor();
             ImGui.EndPopup();
         }
-
-        if (ImGui.BeginPopup("item_search_add"))
-        {
-            ImGui.Text("搜索道具：");
-            var currentTime = ImGui.GetTime();
-            if (ImGui.GetTime() > lastSearchTime + 0.1f)
-            {
-                lastSearchTime = currentTime;
-                itemSearchResults = !string.IsNullOrEmpty(searchResultsQuery)
-                    ? uint.TryParse(searchResultsQuery, out var searchId)
-                        ? itemSheet.Where(x =>
-                                x.RowId == searchId &&
-                                LazyLoot.Config.Restrictions.Items.All(i => i.Id != x.RowId))
-                            .Take(20)
-                            .ToArray()
-                        : itemSheet.Where(x =>
-                                x.Name.ToString().Contains(searchResultsQuery, StringComparison.OrdinalIgnoreCase) &&
-                                LazyLoot.Config.Restrictions.Items.All(i => i.Id != x.RowId))
-                            .Take(20)
-                            .ToArray()
-                    : [];
-            }
-
-            var maxWidth = Math.Max(300f, itemSearchResults.Select(item =>
-                ImGui.CalcTextSize($"{item.Name} (ID: {item.RowId})").X).DefaultIfEmpty(200f).Max() + 30);
-            ImGui.SetNextItemWidth(maxWidth);
-            ImGui.InputText("##itemSearch", ref searchResultsQuery, 100);
-            if (!string.IsNullOrEmpty(searchResultsQuery))
-                if (ImGui.BeginChild("itemSearchResults", new Vector2(maxWidth, 200), true))
-                {
-                    foreach (var item in itemSearchResults)
-                    {
-                        var icon = GetItemIcon(item.Icon);
-                        if (icon != null)
-                        {
-                            ImGui.Image(icon.Handle, new Vector2(16, 16));
-                            ImGui.SameLine();
-                        }
-
-                        if (!ImGui.Selectable($" {item.Name} (ID: {item.RowId})"))
-                            continue;
-                        LazyLoot.Config.Restrictions.Items.Add(new CustomRestriction
-                        {
-                            Id = itemSheet.GetRow(item.RowId).RowId,
-                            Enabled = true,
-                            RollRule = RollResult.UnAwarded
-                        });
-                        LazyLoot.Config.Save();
-                        ImGui.CloseCurrentPopup();
-                    }
-
-                    ImGui.EndChild();
-                }
-
-            ImGui.EndPopup();
-        }
     }
 
     private static bool ValidateImport<T>(ExcelSheet<T> sheet) where T : struct, IExcelRow<T>
     {
         bool bail = false;
-        foreach (var item in importedRestrictions)
+        foreach (var item in _importedRestrictions)
         {
             if (sheet.Any(x => x.RowId == item.Id))
                 continue;
             bail = true;
             Notify.Error($"Imported restriction contains invalid item ID: {item.Id}. Import cancelled.");
         }
+
         if (bail)
         {
             ImGui.CloseCurrentPopup();
@@ -561,12 +638,13 @@ public class ConfigUi : Window, IDisposable
             Notify.Error("Nothing to import on your clipboard");
             return false;
         }
+
         try
         {
             var result = JsonSerializer.Deserialize<List<CustomRestriction>>(clipboardText);
             if (result != null)
             {
-                importedRestrictions = result;
+                _importedRestrictions = result;
                 ImGui.OpenPopup(popupname);
             }
         }
@@ -581,100 +659,122 @@ public class ConfigUi : Window, IDisposable
 
     private static void DrawUserRestrictionDuties()
     {
-        ImGuiEx.LineCentered("ItemRestrictionWarning",
+        
+        ImGui.Dummy(new Vector2(0, 6));
+        ImGuiEx.LineCentered("DutyRestrictionWarning",
             () =>
             {
-                var width = ImGui.GetWindowWidth() - 30;
-                ImGui.PushTextWrapPos(width);
-                ImGui.TextColored(ImGuiColors.DalamudYellow,
-                    "这些规则会覆盖主要限制设置，但如果与物品限制设置发生冲突，则会被物品限制设置覆盖。");
-                ImGui.PopTextWrapPos();
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudYellow);
+                ImGui.TextWrapped("这些规则会覆盖主要限制设置，但如果与物品限制设置发生冲突，则会被物品限制设置覆盖。");
+                ImGui.PopStyleColor();
             });
+        ImGui.Dummy(new Vector2(0, 6));
         ImGui.Separator();
+        ImGui.Dummy(new Vector2(0, 6));
 
-        if (ImGui.BeginTable("UserRestrictionDutiesTable", 8, ImGuiTableFlags.Borders))
+        var duties = LazyLoot.Config.Restrictions.Duties;
+
+        if (duties.Count == 0)
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("类型", ImGuiTableColumnFlags.WidthFixed, 32f);
-            ImGui.TableSetupColumn("名字", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn("需求", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("贪婪", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("放弃", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("不操作", ImGuiTableColumnFlags.WidthFixed, 50f);
-            ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 60f);
-            ImGui.TableHeadersRow();
-
-            for (var i = 0; i < LazyLoot.Config.Restrictions.Duties.Count; i++)
+            ImGui.Dummy(new Vector2(0, 6));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(14, 12));
+            if (ImGui.BeginChild("##UserRestrictionDutyEmptyState", new Vector2(-1, 60), true,
+                    ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
-                var duty = LazyLoot.Config.Restrictions.Duties[i];
-                var restrictedDuty = Svc.Data.GetExcelSheet<ContentFinderCondition>().GetRow(duty.Id);
-                var enabled = duty.Enabled;
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.Checkbox($"##{duty.Id}", ref enabled))
-                {
-                    duty.Enabled = enabled;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                CenterText();
-
-                ImGui.Image(GetDutyIcon(restrictedDuty), new Vector2(24, 24));
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip((restrictedDuty is { HighEndDuty: true, ContentType.Value.RowId: 5 }
-                        ? Svc.Data.GetExcelSheet<ContentType>()
-                            .FirstOrDefault(x => x.RowId == 28).Name
-                        : restrictedDuty.ContentType.Value.Name).ToString());
-
-                ImGui.TableNextColumn();
-                ImGui.Text(restrictedDuty.Name.ToString());
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(restrictedDuty.Name.ToString());
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##need{duty.Id}", duty.RollRule == RollResult.Needed))
-                {
-                    duty.RollRule = RollResult.Needed;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##greed{duty.Id}", duty.RollRule == RollResult.Greeded))
-                {
-                    duty.RollRule = RollResult.Greeded;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##pass{duty.Id}", duty.RollRule == RollResult.Passed))
-                {
-                    duty.RollRule = RollResult.Passed;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                CenterText();
-                if (ImGui.RadioButton($"##doNothing{duty.Id}", duty.RollRule == RollResult.UnAwarded))
-                {
-                    duty.RollRule = RollResult.UnAwarded;
-                    LazyLoot.Config.Save();
-                }
-
-                ImGui.TableNextColumn();
-                if (ImGui.Button($"删除##{duty.Id}"))
-                {
-                    LazyLoot.Config.Restrictions.Duties.RemoveAt(i);
-                    LazyLoot.Config.Save();
-                    break;
-                }
+                ImGuiEx.TextCentered("未添加任何副本");
+                ImGuiEx.TextCentered("点击下方“添加副本”按钮开始添加副本。");
+                ImGui.EndChild();
             }
 
-            ImGui.EndTable();
+            ImGui.PopStyleVar();
+            ImGui.Dummy(new Vector2(0, 6));
+        }
+        else
+        {
+            if (ImGui.BeginTable("UserRestrictionDutiesTable", 8, ImGuiTableFlags.Borders))
+            {
+                ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("类型", ImGuiTableColumnFlags.WidthFixed, 32f);
+                ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("需求", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("贪婪", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("放弃", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("无操作", ImGuiTableColumnFlags.WidthFixed, 50f);
+                ImGui.TableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 60f);
+                ImGui.TableHeadersRow();
+
+                for (var i = 0; i < duties.Count; i++)
+                {
+                    var duty = duties[i];
+                    var restrictedDuty = Svc.Data.GetExcelSheet<ContentFinderCondition>().GetRow(duty.Id);
+                    var enabled = duty.Enabled;
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.Checkbox($"##{duty.Id}", ref enabled))
+                    {
+                        duty.Enabled = enabled;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+
+                    ImGui.Image(GetDutyIcon(restrictedDuty), new Vector2(24, 24));
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip((restrictedDuty is { HighEndDuty: true, ContentType.Value.RowId: 5 }
+                            ? Svc.Data.GetExcelSheet<ContentType>()
+                                .FirstOrDefault(x => x.RowId == 28).Name
+                            : restrictedDuty.ContentType.Value.Name).ToString());
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(restrictedDuty.Name.ToString());
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip(restrictedDuty.Name.ToString());
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##need{duty.Id}", duty.RollRule == RollResult.Needed))
+                    {
+                        duty.RollRule = RollResult.Needed;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##greed{duty.Id}", duty.RollRule == RollResult.Greeded))
+                    {
+                        duty.RollRule = RollResult.Greeded;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##pass{duty.Id}", duty.RollRule == RollResult.Passed))
+                    {
+                        duty.RollRule = RollResult.Passed;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    CenterText();
+                    if (ImGui.RadioButton($"##doNothing{duty.Id}", duty.RollRule == RollResult.UnAwarded))
+                    {
+                        duty.RollRule = RollResult.UnAwarded;
+                        LazyLoot.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                    if (ImGui.Button($"Remove##{duty.Id}"))
+                    {
+                        LazyLoot.Config.Restrictions.Duties.RemoveAt(i);
+                        LazyLoot.Config.Save();
+                        break;
+                    }
+                }
+
+                ImGui.EndTable();
+            }
         }
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(2, 0));
@@ -703,31 +803,65 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("添加副本", new Vector2(-1, 0)))
-        {
-            searchResultsQuery = "";
-            ImGui.OpenPopup("duty_search_add");
-        }
+        var dutySheet = Svc.Data.GetExcelSheet<ContentFinderCondition>();
+        Utils.PopupListButton(
+            buttonLabel: "添加副本...",
+            popupId: "duty_search_add",
+            popupTitle: "Search for duty:",
+            getResults: q =>
+            {
+                if (uint.TryParse(q, out var searchId))
+                {
+                    return dutySheet
+                        .Where(x => x.RowId == searchId
+                                    && x is { RowId: > 0, Name.IsEmpty: false }
+                                    && LazyLoot.Config.Restrictions.Duties.All(d => d.Id != x.RowId));
+                }
+
+                return dutySheet
+                    .Where(x =>
+                        x.Name.ToString().Contains(q, StringComparison.OrdinalIgnoreCase)
+                        && x is { RowId: > 0, Name.IsEmpty: false }
+                        && LazyLoot.Config.Restrictions.Duties.All(d => d.Id != x.RowId));
+            },
+            getItemLabel: duty => $" {duty.Name} (ID: {duty.RowId})",
+            renderItem: duty =>
+            {
+                ImGui.Image(GetDutyIcon(duty), new Vector2(16, 16));
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(duty.Name.ToString());
+                ImGui.SameLine();
+            },
+            onSelect: duty =>
+            {
+                LazyLoot.Config.Restrictions.Duties.Add(new CustomRestriction
+                {
+                    Id = duty.RowId,
+                    Enabled = true,
+                    RollRule = RollResult.UnAwarded
+                });
+                LazyLoot.Config.Save();
+            }
+        );
 
         ImGui.PopStyleVar();
 
-        var dutySheet = Svc.Data.GetExcelSheet<ContentFinderCondition>();
-
         if (ImGui.BeginPopup("import_duty_confirmation", ImGuiWindowFlags.AlwaysAutoResize))
         {
-            bool validation = ValidateImport(dutySheet);
+            var validation = ValidateImport(dutySheet);
             if (!validation)
             {
                 ImGui.CloseCurrentPopup();
             }
+
             ImGui.Text("您确定要更改当前的副本限制配置吗？");
             ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined("此操作无法撤销。"));
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(40 / 255f, 167 / 255f, 69 / 255f, 1.0f));
             if (ImGui.Button("是", new Vector2(100f, 0)))
             {
-                if (importedRestrictions != null)
+                if (_importedRestrictions != null)
                 {
-                    LazyLoot.Config.Restrictions.Duties = importedRestrictions;
+                    duties = _importedRestrictions;
                     LazyLoot.Config.Save();
                     Notify.Success("副本限制设置导入成功！");
                 }
@@ -744,62 +878,6 @@ public class ConfigUi : Window, IDisposable
             }
 
             ImGui.PopStyleColor();
-            ImGui.EndPopup();
-        }
-
-
-        if (ImGui.BeginPopup("duty_search_add"))
-        {
-            ImGui.Text("搜索副本：");
-            var currentTime = ImGui.GetTime();
-            if (ImGui.GetTime() > lastSearchTime + 0.1f)
-            {
-                lastSearchTime = currentTime;
-                dutySearchResults = !string.IsNullOrEmpty(searchResultsQuery)
-                    ? uint.TryParse(searchResultsQuery, out var searchId)
-                        ? dutySheet.Where(x =>
-                                x.RowId == searchId &&
-                                LazyLoot.Config.Restrictions.Items.All(i => i.Id != x.RowId))
-                            .Take(20)
-                            .ToArray()
-                        : dutySheet.Where(x =>
-                                x.Name.ToString().Contains(searchResultsQuery,
-                                    StringComparison.OrdinalIgnoreCase) &&
-                                LazyLoot.Config.Restrictions.Items.All(i => i.Id != x.RowId))
-                            .Take(20)
-                            .ToArray()
-                    : [];
-            }
-
-            var maxWidth = Math.Max(300f, dutySearchResults.Select(duty =>
-                    ImGui.CalcTextSize($"{duty.Name} (ID: {duty.RowId})").X).DefaultIfEmpty(200f)
-                .Max() + 30);
-            ImGui.SetNextItemWidth(maxWidth);
-            ImGui.InputText("##dutySearch", ref searchResultsQuery, 100);
-            if (!string.IsNullOrEmpty(searchResultsQuery))
-                if (ImGui.BeginChild("dutySearchResults", new Vector2(maxWidth, 200), true))
-                {
-                    foreach (var duty in dutySearchResults)
-                    {
-                        ImGui.Image(GetDutyIcon(duty), new Vector2(16, 16));
-                        if (ImGui.IsItemHovered())
-                            ImGui.SetTooltip("Test");
-                        ImGui.SameLine();
-                        if (!ImGui.Selectable($" {duty.Name} (ID: {duty.RowId})"))
-                            continue;
-                        LazyLoot.Config.Restrictions.Duties.Add(new CustomRestriction
-                        {
-                            Id = dutySheet.GetRow(duty.RowId).RowId,
-                            Enabled = true,
-                            RollRule = RollResult.UnAwarded
-                        });
-                        LazyLoot.Config.Save();
-                        ImGui.CloseCurrentPopup();
-                    }
-
-                    ImGui.EndChild();
-                }
-
             ImGui.EndPopup();
         }
     }
@@ -844,6 +922,19 @@ public class ConfigUi : Window, IDisposable
         ImGui.Checkbox("错误", ref LazyLoot.Config.EnableErrorToast);
     }
 
+    private static void DrawDtrToggle()
+    {
+        ImGui.Spacing();
+        ImGui.Text("Server Info Bar (DTR)");
+        ImGui.Checkbox("###LazyLootDtrEnabled", ref LazyLoot.Config.ShowDtrEntry);
+        ImGui.SameLine();
+        ImGui.TextColored(
+            LazyLoot.Config.ShowDtrEntry ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed,
+            LazyLoot.Config.ShowDtrEntry ? "DTR Enabled" : "DTR Disabled"
+        );
+        ImGui.TextWrapped("Show/hide LazyLoot in the Dalamud Server Info Bar (DTR).");
+    }
+
     private void DrawFulf()
     {
         ImGuiEx.LineCentered("FULFLabel", () => ImGuiEx.TextUnderlined("梦幻终极懒人功能"));
@@ -870,7 +961,10 @@ public class ConfigUi : Window, IDisposable
         ImGui.Checkbox("###FulfEnabled", ref LazyLoot.Config.FulfEnabled);
         ImGui.SameLine();
         ImGui.TextColored(LazyLoot.Config.FulfEnabled ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed,
-            LazyLoot.Config.FulfEnabled ? "FULF 启用" : "FULF 禁用");
+            LazyLoot.Config.FulfEnabled ? "FULF 启用"" : "FULF 禁用");
+        if (LazyLoot.Config.RestrictionWeeklyLockoutItems && LazyLoot.Config.WeeklyLockoutDutyActive)
+            ImGui.TextColored(ImGuiColors.DalamudYellow,
+                "检测到每周周限任务：FULF 和 /lazy Roll点功能暂时禁用，直到您离开此任务或禁用每周锁定设置。");
 
         ImGui.SetNextItemWidth(100);
 

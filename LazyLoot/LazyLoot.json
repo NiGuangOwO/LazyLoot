@@ -12,6 +12,6 @@
   "RepoUrl": "https://github.com/PunishXIV/LazyLoot",
   "ImageUrls": null,
   "IconUrl": "https://s3.puni.sh/media/plugin/9/icon-zjun2qgmfbe.png",
-  "DalamudAPILevel": 14,
-  "ChangeLog": "7.4"
+  "DalamudAPILevel": 15,
+  "ChangeLog": "- 7.5"
 }
