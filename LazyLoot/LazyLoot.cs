@@ -42,7 +42,7 @@ public class LazyLoot : IDalamudPlugin, IDisposable
     private const uint WeeklyLockoutMessage = 4234;
 
     private bool isDev;
-    
+
     public LazyLoot(IDalamudPluginInterface pluginInterface)
     {
 #if !DEBUG

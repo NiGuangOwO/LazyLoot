@@ -17,7 +17,6 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using ECommons.Reflection;
 
 namespace LazyLoot;
 
@@ -357,7 +356,7 @@ public class ConfigUi : Window, IDisposable
 
         ImGui.Checkbox("###NeverPassGlam", ref LazyLoot.Config.NeverPassGlam);
         ImGui.SameLine();
-        ImGui.TextWrapped("永不放弃外观道具（物品品级为1的道具）");
+        ImGui.TextWrapped("永不放弃外观道具（道具品级为1的道具）");
     }
 
     private static void CenterText()
@@ -393,7 +392,7 @@ public class ConfigUi : Window, IDisposable
         ImGui.Dummy(new Vector2(0, 6));
         ImGui.Separator();
         ImGui.Dummy(new Vector2(0, 6));
-        
+
         var items = LazyLoot.Config.Restrictions.Items;
 
         if (items.Count == 0)
@@ -403,8 +402,8 @@ public class ConfigUi : Window, IDisposable
             if (ImGui.BeginChild("##UserRestrictionEmptyState", new Vector2(-1, 60), true,
                     ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
-                ImGuiEx.TextCentered("未添加任何道具。");
-                ImGuiEx.TextCentered("点击下方的添加道具按钮开始添加道具。");
+                ImGuiEx.TextCentered("未添加任何道具");
+                ImGuiEx.TextCentered("点击下方“添加道具”按钮开始添加道具");
                 ImGui.EndChild();
             }
 
@@ -503,7 +502,7 @@ public class ConfigUi : Window, IDisposable
         {
             var json = System.Text.Json.JsonSerializer.Serialize(LazyLoot.Config.Restrictions.Items);
             ImGui.SetClipboardText(json);
-            Notify.Success("物品限制设置已复制到剪贴板！");
+            Notify.Success("道具限制设置已复制到剪贴板！");
         }
 
         ImGui.SameLine();
@@ -514,7 +513,7 @@ public class ConfigUi : Window, IDisposable
                 bool userImported = ImportFromClipboard("import_item_confirmation");
                 if (!userImported)
                 {
-                    Notify.Error("导入物品限制设置失败 - 格式无效");
+                    Notify.Error("导入道具限制设置失败 - 格式无效");
                 }
             }
             catch (Exception e)
@@ -524,7 +523,7 @@ public class ConfigUi : Window, IDisposable
         }
 
         ImGui.SameLine();
-        
+
         var itemSheet = Svc.Data.GetExcelSheet<Item>();
         Utils.PopupListButton(
             buttonLabel: "添加道具...",
@@ -572,7 +571,7 @@ public class ConfigUi : Window, IDisposable
         );
 
         ImGui.PopStyleVar();
-        
+
 
         if (ImGui.BeginPopup("import_item_confirmation", ImGuiWindowFlags.AlwaysAutoResize))
         {
@@ -659,13 +658,13 @@ public class ConfigUi : Window, IDisposable
 
     private static void DrawUserRestrictionDuties()
     {
-        
+
         ImGui.Dummy(new Vector2(0, 6));
         ImGuiEx.LineCentered("DutyRestrictionWarning",
             () =>
             {
                 ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudYellow);
-                ImGui.TextWrapped("这些规则会覆盖主要限制设置，但如果与物品限制设置发生冲突，则会被物品限制设置覆盖。");
+                ImGui.TextWrapped("这些规则会覆盖主要限制设置，但如果与道具限制设置发生冲突，则会被道具限制设置覆盖。");
                 ImGui.PopStyleColor();
             });
         ImGui.Dummy(new Vector2(0, 6));
@@ -682,7 +681,7 @@ public class ConfigUi : Window, IDisposable
                     ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
                 ImGuiEx.TextCentered("未添加任何副本");
-                ImGuiEx.TextCentered("点击下方“添加副本”按钮开始添加副本。");
+                ImGuiEx.TextCentered("点击下方“添加副本”按钮开始添加副本");
                 ImGui.EndChild();
             }
 
@@ -892,7 +891,7 @@ public class ConfigUi : Window, IDisposable
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("... 但对于这些物品"))
+            if (ImGui.BeginTabItem("... 但对于这些道具"))
             {
                 DrawUserRestrictionItems();
                 ImGui.EndTabItem();
@@ -925,14 +924,14 @@ public class ConfigUi : Window, IDisposable
     private static void DrawDtrToggle()
     {
         ImGui.Spacing();
-        ImGui.Text("Server Info Bar (DTR)");
+        ImGui.Text("服务器信息栏（DTR）");
         ImGui.Checkbox("###LazyLootDtrEnabled", ref LazyLoot.Config.ShowDtrEntry);
         ImGui.SameLine();
         ImGui.TextColored(
             LazyLoot.Config.ShowDtrEntry ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed,
-            LazyLoot.Config.ShowDtrEntry ? "DTR Enabled" : "DTR Disabled"
+            LazyLoot.Config.ShowDtrEntry ? "DTR 启用" : "DTR 禁用"
         );
-        ImGui.TextWrapped("Show/hide LazyLoot in the Dalamud Server Info Bar (DTR).");
+        ImGui.TextWrapped("在 Dalamud 服务器信息栏中显示/隐藏 LazyLoot（DTR）。");
     }
 
     private void DrawFulf()
@@ -961,7 +960,7 @@ public class ConfigUi : Window, IDisposable
         ImGui.Checkbox("###FulfEnabled", ref LazyLoot.Config.FulfEnabled);
         ImGui.SameLine();
         ImGui.TextColored(LazyLoot.Config.FulfEnabled ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed,
-            LazyLoot.Config.FulfEnabled ? "FULF 启用"" : "FULF 禁用");
+            LazyLoot.Config.FulfEnabled ? "FULF 启用" : "FULF 禁用");
         if (LazyLoot.Config.RestrictionWeeklyLockoutItems && LazyLoot.Config.WeeklyLockoutDutyActive)
             ImGui.TextColored(ImGuiColors.DalamudYellow,
                 "检测到每周周限任务：FULF 和 /lazy Roll点功能暂时禁用，直到您离开此任务或禁用每周锁定设置。");
